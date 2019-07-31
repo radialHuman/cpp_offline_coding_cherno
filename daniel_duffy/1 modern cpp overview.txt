@@ -1,0 +1,45 @@
+/* Daniel Duffy
+ * https://quantnet.com/media/categories/level-1-videos.12/
+ * intro to c++ 11 /14 (modern)
+ * C++11
+ * to change in libraries than in the core language
+ * multithreading like in boost, generic programming like in template, initilization of continers, performance and type safety
+ * C++14
+ * bug fixes and minor changes
+ * lambda , generic, lambda captures
+ * C++17
+ * folding expressions, unpacking variadic parameters
+ * concepts
+ * network lib on boost::asio // asynchronous io
+ * file system lib on boost::filesystem
+ *
+ * Reliability/robust
+ * > floating point classification, infinite, nan, zero, normal
+ * > fundamental data types nullptr,long long, unsigned long long
+ * > initializer list
+ * > decltype
+ * > Type traits
+ * Functionality
+ * > complie time bitsets
+ * > fized size array
+ * > unrestricted union
+ * > tuple type
+ * > hash tables
+ * > multiparadigm (functional, oop, generic)
+ * > function oevrloading, subtype and parametric polymorphism
+ * > lambda functions
+ * > universal function wrappers
+ * > class members :  sealed, delete, oexplicit override, final, default
+ * R value reference
+ * Move semantic
+ * lvalue, T&&
+ * perfect forwarding
+ * smart pointers
+ * New libraries
+ * > random # generators, distributions
+ * > regex based on boost
+ * > concurrency, atomics, multithreading
+ * > clocks and timers from chrono library
+ * > 
+ */
+
