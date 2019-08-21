@@ -213,5 +213,167 @@ auto x4 = {17}; // This will become a list since it has "="
 * But in c++11/14 all these are initializer list
  
  > ## Part 2
- * ...
- > ### ...
+
+ > ### Decltype type deduction (C++11)
+ * If something has to be initialized and its type has to be similar to that of something else then it can be used to deduce the type and play the role of type
+ * It never strips const/volatile/references
+ ``` cpp
+#include <iostream>
+#include <vector>
+
+int main()
+{
+    int x = 10;
+    decltype(x) y{12}; // using the type of x to initialize y
+    std::cout << y << std::endl;
+}
+
+/*
+ * OUTPUT
+ 12
+ */
+ ```
+ * decltype(lvalue of type T) = T&
+ * _Side effect_ : names are lvalue, but decltype(name) rule beats decltype(expr) rule
+ ``` cpp
+    int x = 10;
+    // decltype(x) is int
+    // decltype((x)) is int&
+ ```
+* Other complex rules are for hard-core library building 
+
+> ### Function return type deduction (C++14)
+* All lambdas and all fucntions are elegible for type deduction
+* Two main type return deductions are:
+    1. auto : That uses template type deduction (not auto type deduction). This will make a copy in return.
+    2. decltype(auto) : uses decltype deduction rules. This would return a reference to the value.
+* Do not put ( ) for returning anything, that would not give the value of the object but the value of the expression
+* _Exception_: If the return type inside the function is int and the return type of the function is decltype(auto), the output will be int, but if the return is with ( ), then the output will be reference as in the case of decltype(auto)
+``` cpp
+#include <iostream>
+#include <vector>
+
+decltype(auto) func1(const int& x)
+{
+    auto y = x;
+    return y; // this is a name return
+}
+
+decltype(auto) func2(const int& x)
+{
+    decltype(x) y{10};
+    return (y); // this is a expression return
+}
+
+int main()
+{
+    std::cout << "return without paranthesis : " << func1(10) << std::endl;
+    std::cout << "return with paranthesis gives a reference : " << func1(10) << std::endl;
+}
+
+/*
+ * OUTPUT
+return without paranthesis : 10
+return with paranthesis gives a reference : 10
+ */
+```
+* Deduced return type has to be used carefully, and most of the time unused
+
+> ### std::move and std::forward
+* They dont move or forward respectively, at run time
+* The dont generate code either, at run time
+* std::move: unconditionally __casts__ to an rvalue : rvalue_cast
+    * Implementation of move in C++14 has decltype(auto)
+* std::forward: conditionally __casts__ to an lvalue
+``` cpp
+#include <iostream>
+#include <vector>
+#include <string>
+
+class annotation
+{
+private:
+    std::string output;
+public:
+    explicit annotation(std::string input);
+};
+// constructor outside the class
+annotation::annotation(std::string input):output(std::move(input)) {}
+
+int main()
+{
+    annotation e("something");
+    std::cout << e << std::endl;
+}
+
+/*
+ * OUTPUT
+
+ */
+```
+---
+> Lost 30 mins of the video (no move/forward explantion at this time in any other resource, may be in the book later)
+---
+
+> ### Auto
+* If a lvalue is "auto"ed then it should be initialized
+``` cpp
+int x; // allowed
+auto x = 10; // allowed
+auto x; // not allowed, cos it doesn know what the type is
+```
+* makes code easier to read
+``` cpp
+for(std::string::iterator s : s1 ) // explicit is verbose
+for (auto i: s1) // easy to read
+
+// if a iterator points to something, the type fo that iterator is 
+// std::iterator_traits<It>::value_type <- this is inconvinient to type in so, auto it
+```
+* makes things easy when it comes to different bytes in 32 and 64 bit systems
+``` cpp
+unsigned s = v1.size(); // can be problamatic if in 64 bit windows
+auto  s = v1.size(); // makes things easy
+```
+* Avoid accidental temporary objects
+``` cpp
+std::map<std::string, int> m;
+for(const std::pair<std::string,int>& p : m) ... // creates temp for each element by copying since the const is missing in pair. Also it is slow and wrong
+for(const auto& p : m) ... // no temps required
+```
+* It is not just typing convinience, but avoids such pitfalls
+* Efficient way fo storing function objects
+``` cpp
+std::function<int(int)> fla = [a,b](int x){return x*x -a/10 +b;}
+// each lambda fucntion has its own type 
+// std fucntion obj can store these, in this case, it takes an (int) and returns an int
+// it has a fixed size in memory, can be on heap, 
+// it is a generalization of function pointer
+auto flbs  = [a,b](int x){return x*x -a/10 +b;}
+// cant be on heap, hence more efficient
+```
+* *__Exceptions__* 
+    * braced initialization
+    ``` cpp
+    auto v1 = {1,2,3,4}; // list
+    auto v1 {5}; // list
+    auto v1 (5); // int
+    auto v1 = 5; // int
+    ```
+    * hidden proxy types
+    ``` cpp
+    // type that acts like some other type
+    // vector<bool> is an examples
+    std::vector<bool> v;
+    bool v1 = v[5]; // is a bool, it returns reference to the element not to a bit which is how bool stores
+    auto v1 = v[5]; // is a std::vecot<bool>::reference, a class type
+    ```
+    * It can make temporary with proxy types exist more larger than it should generally and lead to dangling pointer, undefined behaviour
+* These problems are common for libraries based on expression template, like: 
+    * Boost.uBLAS (matrix operations)
+    * Boost.Xpressive (regex)
+    * Boost.proto (DSL)
+    * Boost.MetaStateMachine (state machine)
+* These with auto has higher risk of compile/tun time surprises
+
+ > ## Part 3
