@@ -212,6 +212,7 @@ auto x4 = {17}; // This will become a list since it has "="
 * Braces are for uniform initialization, unlike ( ) 
 * But in c++11/14 all these are initializer list
  
+ ---
  > ## Part 2
 
  > ### Decltype type deduction (C++11)
@@ -375,5 +376,111 @@ auto flbs  = [a,b](int x){return x*x -a/10 +b;}
     * Boost.proto (DSL)
     * Boost.MetaStateMachine (state machine)
 * These with auto has higher risk of compile/tun time surprises
-
+---
  > ## Part 3
+
+* The libraries with proxy has good documentation and if suspicious, header file template would have variation in the type the should return and the one they do
+* To cope with this issue, auto can be said what to deduce by casting 
+* This helps in making it clear that there is a type conversion involved - expressive
+
+> ### Universal references
+* type&& <- is a universal reference and can be both lvalue and rvalue
+* Lvalue cant be assigned to a rvalue reference type, and vice versa
+    * if "type&& or "&&" is a rvalue then
+        * It binds onlr rvalues and
+        * facilitates move
+    * Else if its a universal type
+        * Binds everything
+        * can copy or fwd
+        * renamed by forwarding reference
+* *Reference collapsing* (later)
+``` cpp
+void f(widget&& param); // rvalue ref
+
+widget&& var1 = widget(); // rvalue ref
+
+auto&& var2 = var1; // not rvalue ref
+
+template <typename T>
+void f(std::vector<T>&& param); // rvalue ref
+
+template <typename T>
+void f(T&& param); // not rvalue ref
+
+```
+* URef arises in two situations
+    * function template parameter (mostly used in)
+    ``` cpp
+    template <typename T>
+    void f(type&& param);
+    ```
+    * Auto declaration
+    ``` cpp
+    auto&& var = ... ;
+    ```
+    * _It happens if its of T&& where the T is deduced type_
+    * Initiaizer of a reference determines if its a r or l value ref
+    ```
+        * Initializer of URef is a L => URef becomes LRef
+        * Initializer of URef is a R => URef becomes RRef
+    ```
+    * Example 1 (in template)
+    ``` cpp
+    template <typename T>
+    void f(T&& param);
+
+    widget w;
+
+    f(w); // here w is a lvalue, which is passed into the template, which makes f(Widget&) by deducing, hence making URef a LRef
+
+    f(std::move(w)); // here w is casted into Rvalue, hence making f(widget&&), there by making URef a RRef
+    // these two call different functions due to change in reference
+    // reduces different templates in less code
+
+    f(widget()); // Creates unnamed temp widget object, no address so its a rvalue and hence template gets RRef
+    ```
+    * Example 2 (auto declaration)
+    ``` cpp
+    std::vector<int> v;
+
+    auto&& val = 5; // This is a rvalue passing hence RRef
+
+    auto&& val = v[5]; // returns int&, which is a lref == lavlue (default), hence making this whole thing LRef
+    ```
+    * Standardized document (hazardous), has details of libraries and auto&& is used in range-based-for implementation. Otherwise its rare in user code.
+    * Can be used in C++14 lambdas
+    * Not type deduction, no URef
+    ``` cpp
+    void f(Widget&& w);  // no type deduction, since widget is known to be the type, so its a RRef not URef
+
+    template <typename T>
+    void f(T&& param); // T is not known, will be deduced, so URef
+
+    template <typename T1>
+    class g1
+    {
+        g1(g1&& rhs); // no type deduction going on , so Rref
+    };
+
+    template <typename T1>
+    class g2
+    {
+        template <typename T2>
+        g2(T2&& rhs); // T2 is deduced, so URef
+    };
+    ```
+    * Not all T&& in a template lead to URef
+    ``` cpp
+    template <class T, class Allocator=allocator<T>
+    class vector{
+    public:
+        void push_back(T&& x); // 
+    };
+
+    std::vector<int> v1; // due to the nature of this, the type is known and there is no deduction
+    v1.push_back(10.5); // this would make it a RRef
+    ```
+    * >  #### _Function templates can deduce types, class template cant_
+    
+---
+ > ## Part 4
