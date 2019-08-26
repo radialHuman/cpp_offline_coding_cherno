@@ -484,3 +484,123 @@ void f(T&& param); // not rvalue ref
     
 ---
  > ## Part 4
+
+ * If the same implementation is done for emplace_back than push _back then it is a URef
+ * Since it gives a list of arg (variadic template) of arbitrary type and deduction happens
+ * emplace_back does not create and destroy extra constructor like push_back (lesser code, lesser steps)
+ * In the vector of std, there are two versions push_back one for l and one for r (overloaded)
+ * But since URef is eligible in case of emplace_back, only one fucntion exists (purpose of URef) (already overloaded)
+ * Emplace back moves the arguments -> forwards reference
+
+* Syntax matters : The type has to be entirely deduced
+ ``` cpp
+ template <typename T>
+ void f(T&& param); // URef
+
+ template <typename T>
+ void f(const T&& param); // RRef, const will not be deduced
+
+ template <typename T>
+ void f(std::vector<T>&& param); // RRef, nothign to deduce like in the case of class
+ 
+ widget w;
+ auto&& v1 = w; // URef => becomed LRef
+ const auto&& v2 = w; //  wont compile
+
+ ```
+* RRef to const is very rare, since RRef can be moved, const means cant modify so its contradictory
+
+* _RRef can be used be std::move and URef can be used with std::forward_
+* _RRef is bound to be moved, whereas URef might be moved_
+* Every type can have both rvalue and lvalue ex: int x; and 10;
+* ALl parameters are lvalue, it has a name and an address
+``` cpp
+widget::widget (widget&& rhs); // this is a RRef to a lvalue
+template<typename T>
+void widget::setName(T&& newName); // this is a URef to a lvalue
+```
+* One of the main function of C++11 was to make it possible for rvalues to be moved from
+```
+doSomthing( parameter ); // this should treat rvalue and lvalue separately (polymorphism)
+```
+* std::move unconditionally casts to rvalue
+* std::move is used to avoid copying
+``` cpp
+class Widget
+{
+    public:
+    Widget(Widget&& rhs) // this is a rvalue ref since it involves class
+    : name(std::move (rhs.name)), // moving object field by field
+    p(std::move (rhs.p))
+    {
+        // implementation
+    }
+
+    private:
+    std::string name;
+    std::shared_pointer<someDataStructure> p;
+};
+```
+* std::forward conditionally casts to a rvalue
+* Since it is a URef, move might not work so forward depending on the value
+```cpp
+class Widget
+{
+public:
+    template <typename T>
+    void setName(T&& newName) // it will cast it into an rvalue only if it was bound to an rvalue when it was called
+    {
+        name = std::forward<T>(newName); // this is a URef, the T type will determine if it will be copied or moved
+    }
+};
+
+```
+* URef copy lvalues and move rvalue
+* These are cast so complier doesn know what it does
+* std::forward has to be apssed in with a type to be casted in
+* Case: 
+```
+If there is a move done before the move fucntion then the variable will not be there to be moved,so move it or change it only in the last cast
+```
+* _Use std::move on the last occurance of the RRef_
+* _Use std::forward on the last occurance of the URef_
+
+* Return value optimization (???)
+* If its a RRef you are passing, apply move when last used
+* Same for URef, forward it when last used
+``` cpp
+Matrix operator+(Matrix&& temp, const Matrix& y)
+{
+    temp += y;
+    return std::move(temp); // treat it like an rvalue
+}
+
+Matrix operator+(Matrix&& temp, const Matrix& y)
+{
+    temp += y;
+    return temp; // will be copied
+}
+```
+* Functions returning references might lead to danlging references problem
+* _Copy elition_ : If local variable is of the same type as the function, and it returns the lcoal variable, then both of them can be put in the same chunk so dont move it 
+* If it is returned with a move, which is a function, does not suit well with copy elition
+``` cpp
+// generates good code
+Widget f1()
+{
+    Widget w;
+    ...
+    return w;
+}
+
+// generates bad code
+Widget f1()
+{
+    Widget w;
+    ...
+    return std::move(w); /// also no Rref here
+}
+```
+
+---
+ > ## Part 5
