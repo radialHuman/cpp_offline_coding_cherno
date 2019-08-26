@@ -604,3 +604,91 @@ Widget f1()
 
 ---
  > ## Part 5
+ 
+ > ### Reference Collapsing
+ * Reference to reference is illegal manually
+ ``` cpp
+ Widget w;
+ Widget& & rrw = w; // this returns error
+ ```
+* But this can happen during type deduction and evaluation
+``` cpp
+template <typename T>
+void f(T&& arg);
+```
+* Lvalue arg to f => T&
+* Rvalue arg to f => T 
+``` cpp
+Widget w;
+f(w); // leads to Widget&, due to lvalue passed
+// this leads to f<Widget&>(Widget& && arg) by replacing
+f(std::move(w)); // T is widget, due to rvalue passed
+```
+> #### Reference collapsing rules
+1. T& & => T&
+1. T&& & => T&
+1. T& && => T&
+1. T&& && => T&&
+* If RRef-to-RRef => RRef
+* LRef-to-anything => LRef
+> _A URef is a RRef in a reference collapsing context_
+``` cpp
+template <typename T>
+void f(T&& arg);
+Widget w;
+f(w); // this is f(Widget& &&), technically a Rref but due to LRef, it collapses
+```
+```cpp
+// in case of auto
+Widget w;
+auto&& v1 = w; // Widget& && => Widget &, due to lvalue
+auto&& v1 = std::move(w); // Widget&&, due to rvalue
+```
+``` cpp
+// in case of typedefs
+(???)
+```
+``` cpp
+// in case of decltype
+Widget w:
+decltype(w)&& r1 = std::move(w); // widget&&
+decltype((w))&& r1 = std::move(w); // Widget&, wont compile
+```
+
+* Move operations cant be panache since most of the types dont support move operation
+* std::array doesn use heap memory, so move is not quick, since it is in linear time O(n)
+* std::string of size 7 to 15 has move operation as fast as copy
+* std::vector::push_back if has copying internal then it gives full guarantee, else if it has move then vector can be modified in case of exception while performing the action
+* Copy takes longer than move, when move doesn have exceptions
+``` 
+Move if useless if
+* Lvalue has to be moved
+* Type doesn offer support for move
+* Move is not cheaper than copy
+* Move throws error
+```
+
+> #### Default Capture mode
+* by-reference capture [&] can lead to dangling reference
+``` cpp
+filters.emplace_back([&](int i){return i%local_variable==0;})
+// this is a general way of saying, things will dangle, since reference does not die in a scope
+// to make it easy to spot
+filters.emplace_back([&local_variable](int i){return i%local_variable==0;})
+```
+* by-value capture still can dangle (pointer in this case) like by-reference
+``` cpp
+filters.emplace_back([=](int i){return i%local_variable==0;})
+// [=]  does not cpature divisor, only non static local variabels can be captured
+// [=] this captures "this"
+
+// This can be avoided by copying external variable to a local and then using this copy to work with
+
+// make local variables static to avoid these problems, that way [=] does not capture but just referes to the static variable and not its copy
+
+// Avoid all this by using explicitly variables to be capture
+// makes things self-contained
+// reduces dangling risk
+```
+---
+ > ## Part 6
