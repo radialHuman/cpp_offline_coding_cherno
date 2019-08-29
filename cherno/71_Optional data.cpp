@@ -40,8 +40,8 @@ std::optional<std::string> read_optional(const std::string& path)
 }
 
 int main()
-{	
-	std::string data = read_file("/media/radial/Work/Projects/cpp/48_Templates");
+{
+	std::string data = read_file("testing.txt");
 	// old way of checking if it worked
 	if(data!="")
 	{
@@ -49,26 +49,30 @@ int main()
 		std::cout << data << std::endl;
 	}
 	else
-		std::cout << "Definitely did not work\n";
+		std::cout << "Definitely did not work the old way\n";
 
 	// or a boolean can be passed to make it true or false in the function based on the outcome
 
 	// New way is to use the optional, which check if data is read properly or not
 
-	std::optional<std::string> data = read_file("/media/radial/Work/Projects/cpp/48_Templates.txt");
+	std::optional<std::string> data2 = read_file("testing.txt");
 	// auto data = read_file("/media/radial/Work/Projects/cpp/48_Templates.txt");
 
 	// if default value has to be set
-	std::string default = data.value_or("Some default string");
-	
-	// if(data.has_value())
-	if(data)
-		std::cout << data.value() << std::endl;
-	else:
-		std::cout << "Definitely did not work\n";
+	std::string defaults = data2.value_or("Some default string");
+	if(data2.has_value())
+//	if(data2)
+
+	    std::cout << "Testing the optional way : \n" << data2.value() << "\nData in text file" << std::endl;
+	else
+		std::cout << "Definitely did not work the new way either\n";
 }
 
 /*
 * OUTPUT
+Definitely did not work the old way
+Testing the optional way :
+
+Data in text file
 
 */
